@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+# Builds
+dist/
+.next/
+out/
+build/
+# Entorno (nunca versionar secretos)
+.env
+.env.local
+.env.*.local
+# Logs
+*.log
+npm-debug.log*
+# Sistema
+.DS_Store
+Thumbs.db
+# Prisma
+backend/prisma/*.db
+# Coberturas / cachés
+coverage/
+.turbo/
+.cache/
