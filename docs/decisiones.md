@@ -27,3 +27,11 @@ una razón real lo justifica más adelante.
 de monorepo), en un único repositorio Git.
 **Motivo:** simple de entender y presentar a colaboradores; sin la complejidad de
 herramientas de monorepo, que no aportan en esta etapa.
+
+## 2026-10-15 — Enfoque +40 sin restricción de acceso por edad (Opción A)
+**Decisión:** la app se enfoca en personas +40 (mensaje, funciones, misión), pero
+no bloquea el acceso por edad; cualquier persona puede registrarse y usarla.
+**Motivo:** evita contradicción con el compliance (no usar la edad para filtrar),
+no excluye al usuario secundario del plan (desempleados/emprendedores que pueden
+ser <40) y es lo más limpio legalmente. El enfoque +40 se da por producto, no por
+un muro de edad.

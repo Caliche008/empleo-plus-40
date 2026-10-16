@@ -16,6 +16,11 @@
 
 ## 2. No discriminación por edad (y otros)
 
+- **Enfoque de producto, no filtro por edad:** la app está *diseñada y pensada
+  para* personas mayores de 40 años (su lenguaje, funciones y misión), pero **NO
+  restringe el acceso por edad**. Cualquier persona puede usarla. La edad se usa
+  solo para personalizar contenido si el usuario lo autoriza, nunca para filtrar,
+  puntuar ni excluir.
 - **La edad NUNCA se usa para filtrar ni para puntuar** a un candidato.
 - Los puntajes de match no deben variar por nombre, edad inferida o género.
   Esto se verifica con pruebas de sesgo periódicas.
