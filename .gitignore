@@ -21,3 +21,6 @@ backend/prisma/*.db
 coverage/
 .turbo/
 .cache/
+
+# Caché de compilación TypeScript
+*.tsbuildinfo
