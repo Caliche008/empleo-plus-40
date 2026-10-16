@@ -2,12 +2,37 @@
 
 ## Propósito
 
-Ayudar a personas mayores de 40 años en Colombia a conseguir **entrevistas** de
-trabajo. La herramienta analiza cada vacante frente al perfil real de la persona,
-adapta su CV de forma honesta para pasar filtros automáticos (ATS), la prepara
-para entrevistas y da seguimiento a sus postulaciones.
+Ayudar a profesionales mayores de 40 años a **vencer el edadismo laboral** y
+conseguir **entrevistas**. La herramienta traduce su experiencia a las competencias
+que hoy buscan las empresas, analiza cada vacante frente a su perfil real, adapta
+su CV de forma honesta para pasar filtros automáticos (ATS), detecta sesgo por edad
+en las ofertas, lo prepara para entrevistas y da seguimiento a sus postulaciones.
 
 El foco es **conseguir entrevistas**, no solo enviar postulaciones.
+
+## Propuesta de valor (diferenciador)
+
+A diferencia de los optimizadores de CV genéricos (en inglés, para público joven o
+tech), esta herramienta se centra en el **profesional +40 de Latinoamérica** y en el
+problema real que nadie resuelve bien: el **edadismo laboral**. Lo diferenciador no
+es la tecnología (optimizar CV ya existe), sino el enfoque, el nicho y el método:
+
+1. **Traductor de experiencia +40:** convierte trayectoria larga en competencias
+   vigentes y demandadas.
+2. **Detector de edadismo:** identifica y explica el sesgo por edad en las ofertas.
+3. **Honestidad radical:** nunca inventa; traduce y reformula lo real. (La competencia
+   presume de "rellenar" o "aplicar por ti"; aquí no.)
+4. **Dignidad y acompañamiento humano:** tono respetuoso + orientadores reales. Es el
+   foso que una IA pura no replica.
+5. **WhatsApp-first y accesible de verdad:** usable por alguien de 55 años con un
+   teléfono básico y baja alfabetización digital.
+
+## Alcance geográfico
+
+- **Piloto inicial: Colombia** (mercado de casa, contexto legal y cultural conocido).
+- **Visión: toda Latinoamérica.** La arquitectura se diseña **multi-país desde el
+  inicio** (compliance, español neutro, salarios y cultura laboral configurables por
+  país), aunque el primer lanzamiento sea local. Se expande país por país tras validar.
 
 ## Lo que el producto SÍ hace
 
@@ -24,9 +49,9 @@ El foco es **conseguir entrevistas**, no solo enviar postulaciones.
 
 ## Usuarios
 
-- **Principal:** 40 a 65 años, en búsqueda activa o transición de carrera, 15 a 35
-  años de experiencia, alfabetización digital variable, uso intensivo de WhatsApp
-  y smartphone de gama media/baja.
+- **Principal:** 40 a 65 años en Latinoamérica (piloto en Colombia), en búsqueda
+  activa o transición de carrera, 15 a 35 años de experiencia, alfabetización
+  digital variable, uso intensivo de WhatsApp y smartphone de gama media/baja.
 - **Secundario:** personas desempleadas por reestructuración; emprendedores que
   cierran negocio y vuelven a relación de dependencia.
 - **Aliados (B2B2C):** cajas de compensación, SENA, agencias públicas de empleo,

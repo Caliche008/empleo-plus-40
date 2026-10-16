@@ -21,6 +21,7 @@ model Candidato {
   id            String   @id @default(uuid())
   telefono      String?  @unique      // registro por celular/WhatsApp
   nombre        String?
+  pais          String   @default("CO")  // ISO país; multi-país (MVP: Colombia)
   consentimiento Boolean @default(false)
   mostrarFechasAntiguas Boolean @default(false)
   objetivo      ObjetivoLaboral?

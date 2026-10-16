@@ -6,10 +6,11 @@ empleo para personas +40".
 
 ---
 
-## 2026-10-15 — Base de datos: PostgreSQL gestionado en la nube
-**Decisión:** usar un PostgreSQL gestionado (Neon o Supabase) en lugar de local/Docker.
+## 2026-10-15 — Base de datos: PostgreSQL gestionado en Neon
+**Decisión:** usar **Neon** (PostgreSQL gestionado) en lugar de local/Docker/Supabase.
 **Motivo:** gratis para empezar, incluye pgvector (requerido para match semántico),
-evita instalar software pesado y facilita que colaboradores se conecten.
+reactivación instantánea, permite varios proyectos, y es simple de conectar. Evita
+instalar software pesado y facilita que colaboradores se conecten.
 
 ## 2026-10-15 — Backend: NestJS (TypeScript)
 **Decisión:** NestJS en vez de FastAPI (Python).
@@ -35,3 +36,22 @@ no bloquea el acceso por edad; cualquier persona puede registrarse y usarla.
 no excluye al usuario secundario del plan (desempleados/emprendedores que pueden
 ser <40) y es lo más limpio legalmente. El enfoque +40 se da por producto, no por
 un muro de edad.
+
+## 2026-10-15 — Alcance regional: piloto Colombia, arquitectura multi-país
+**Decisión:** el producto apunta a toda Latinoamérica, pero el piloto inicial es
+en Colombia. La arquitectura se diseña multi-país desde el inicio: cada usuario
+tiene un país asociado; el compliance (ley de datos, antidiscriminación), el aviso
+de privacidad y detalles culturales (salarios, modalidades, español neutro) son
+configurables por país. En el MVP solo se implementa Colombia.
+**Motivo:** la visión es regional y el edadismo laboral es transversal en Latam.
+Diseñar multi-país ahora evita rehacer; lanzar país por país tras validar evita
+abarcar demasiado de golpe.
+
+## 2026-10-15 — Lo diferenciador es el núcleo, no un extra
+**Decisión:** priorizar como centro del producto el **traductor de experiencia +40**
+y el **detector de edadismo**, con honestidad radical y acompañamiento humano. Los
+módulos genéricos (optimizador ATS, mensajes) quedan al servicio de ese diferenciador.
+**Motivo:** la investigación de mercado mostró que optimizar CV/ATS ya está resuelto
+por muchos competidores maduros (en inglés, público general). La ventaja real está
+en el nicho +40, el enfoque local Latam, la honestidad y el acompañamiento, no en la
+tecnología genérica.

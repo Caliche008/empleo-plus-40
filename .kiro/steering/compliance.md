@@ -3,16 +3,33 @@
 > Estas reglas son **obligatorias** y no se pueden sobrepasar. Afectan tanto al
 > código como al comportamiento de la IA.
 
-## 1. Protección de datos personales (Ley 1581 de 2012 — Colombia)
+## 1. Protección de datos personales (cumplimiento por país)
 
+El producto nace para Latinoamérica, por lo que el cumplimiento se diseña como
+**configurable por país**. Principios comunes (aplican en todos los países) y una
+capa específica por jurisdicción.
+
+### Principios comunes (siempre)
 - **Consentimiento explícito** antes de recolectar o tratar datos personales.
 - **Aviso de privacidad** claro, en lenguaje simple, accesible desde la app.
 - Derechos del titular: **conocer, actualizar, rectificar y suprimir** sus datos.
-- Registro de la base de datos ante la **SIC** cuando aplique.
 - **Minimización:** solo se guardan los datos que el servicio realmente necesita.
 - **Eliminación en un paso:** el usuario puede borrar su cuenta y documentos de
   forma sencilla y completa.
 - **Cifrado** en tránsito (TLS) y en reposo. Control de acceso por rol.
+
+### Específico por país (se activa según el país del usuario)
+- **Colombia (piloto):** Ley 1581 de 2012. Registro de la base de datos ante la
+  **SIC** cuando aplique. Antidiscriminación: Ley 1482 de 2011.
+- **México:** LFPDPPP (y su normativa vigente).
+- **Argentina, Chile, Perú y otros:** sus respectivas leyes de datos personales.
+- **Pendiente por país:** antes de lanzar en un país nuevo, revisar su ley de datos
+  y antidiscriminación con apoyo legal local, y registrar la decisión en
+  `docs/decisiones.md`. No se lanza en un país sin esta revisión.
+
+> La arquitectura debe permitir asociar a cada usuario su **país** y aplicar el
+> aviso de privacidad y las reglas correspondientes. En el MVP se implementa
+> Colombia; los demás se añaden al expandir.
 
 ## 2. No discriminación por edad (y otros)
 

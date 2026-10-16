@@ -6,6 +6,12 @@
 módulos internos desacoplados. Si un módulo necesita escalar por sí solo en el
 futuro, se extrae entonces, no antes.
 
+**Multi-país desde el diseño:** cada usuario tiene un `pais` asociado. El
+compliance, el aviso de privacidad y los parámetros culturales (moneda/salarios,
+modalidades, español neutro con variantes) se resuelven por configuración según el
+país, no con lógica incrustada. En el MVP se implementa **Colombia**; añadir un país
+nuevo debe ser configuración + revisión legal, no reescritura.
+
 Dos proyectos independientes dentro del repositorio:
 
 - `frontend/` — PWA en Next.js (App Router).
@@ -24,8 +30,8 @@ su cuenta. Conviven en el mismo repositorio para facilitar la colaboración.
 
 ### Backend
 - **NestJS** + **TypeScript**.
-- **PostgreSQL** gestionado en la nube (Neon o Supabase), con **pgvector** para
-  matching semántico.
+- **PostgreSQL** gestionado en **Neon** (nube), con **pgvector** para matching
+  semántico.
 - **Prisma** como ORM y gestor de migraciones.
 - Validación de entrada con **class-validator** / Zod en los límites.
 
