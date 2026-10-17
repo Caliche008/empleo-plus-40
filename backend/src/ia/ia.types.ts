@@ -13,6 +13,17 @@ export interface PeticionIa {
   maxTokens?: number;
 }
 
+/**
+ * Petición multimodal (texto + una imagen) para proveedores con visión. La
+ * imagen va embebida en base64 junto a su `mimeType` (p. ej. `image/png`).
+ */
+export interface PeticionVision {
+  prompt: MensajeIa[];
+  imagen: { datosBase64: string; mimeType: string };
+  temperatura?: number;
+  maxTokens?: number;
+}
+
 /** Respuesta normalizada de cualquier proveedor. */
 export interface RespuestaIa {
   texto: string;
@@ -29,6 +40,12 @@ export interface ProveedorIa {
   readonly nombre: string;
   readonly modelo: string;
   completar(peticion: PeticionIa): Promise<RespuestaIa>;
+  /**
+   * Capacidad OPCIONAL de visión. Solo la implementan los proveedores que
+   * aceptan imágenes (p. ej. Gemini). Los que no la definen siguen cumpliendo
+   * el contrato sin cambios.
+   */
+  completarVision?(peticion: PeticionVision): Promise<RespuestaIa>;
 }
 
 /**

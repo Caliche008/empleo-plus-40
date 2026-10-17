@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import type { OpcionesJson, PeticionIa, ProveedorIa, RespuestaIa } from './ia.types.js';
+import { Injectable, Optional } from '@nestjs/common';
+import type {
+  OpcionesJson,
+  PeticionIa,
+  PeticionVision,
+  ProveedorIa,
+  RespuestaIa,
+} from './ia.types.js';
 import { IaError } from './ia.types.js';
 import { GeminiProvider } from './providers/gemini.provider.js';
 import { OpenAICompatibleProvider } from './providers/openai-compatible.provider.js';
@@ -15,7 +21,7 @@ import { loadEnv } from '../common/config/env.js';
 export class IaService {
   private readonly proveedor: ProveedorIa;
 
-  constructor(proveedor?: ProveedorIa) {
+  constructor(@Optional() proveedor?: ProveedorIa) {
     this.proveedor = proveedor ?? IaService.crearDesdeEntorno();
   }
 
@@ -59,6 +65,63 @@ export class IaService {
 
     for (let intento = 0; intento <= reintentos; intento++) {
       const res = await this.proveedor.completar({ ...peticion, mensajes });
+      const json = extraerJson(res.texto);
+      if (json !== undefined) {
+        const parsed = opciones.esquema.safeParse(json);
+        if (parsed.success) return parsed.data;
+        ultimoError = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+      } else {
+        ultimoError = 'la respuesta no contenía JSON';
+      }
+      // Reintento: pedimos al modelo que corrija entregando SOLO JSON válido.
+      mensajes.push({ rol: 'assistant', contenido: res.texto });
+      mensajes.push({
+        rol: 'user',
+        contenido: `Tu respuesta no fue JSON válido (${ultimoError}). Responde ÚNICAMENTE con el JSON pedido, sin texto adicional ni explicaciones.`,
+      });
+    }
+
+    throw new IaError(
+      `No se obtuvo JSON válido tras ${reintentos + 1} intentos: ${ultimoError}`,
+      'peticion',
+      this.proveedor.nombre,
+      false,
+    );
+  }
+
+  /**
+   * Equivalente multimodal de `completarJson`: envía una imagen al proveedor y
+   * valida su salida contra un esquema Zod. El primer intento usa la visión; si
+   * el JSON no valida, los reintentos piden corrección sobre el texto ya emitido
+   * (reusando `completar`, sin reenviar la imagen). Lanza IaError('peticion',
+   * recuperable:false) si el proveedor activo no soporta visión o si no se logra
+   * un JSON válido tras los reintentos.
+   */
+  async completarVisionJson<T>(peticion: PeticionVision, opciones: OpcionesJson<T>): Promise<T> {
+    if (!this.proveedor.completarVision) {
+      throw new IaError(
+        'El proveedor de IA activo no admite leer imágenes. ' +
+          'Sube tu hoja de vida en PDF, Word (DOCX) o texto (TXT).',
+        'peticion',
+        this.proveedor.nombre,
+        false,
+      );
+    }
+
+    const reintentos = opciones.reintentos ?? 2;
+    let ultimoError = '';
+    // Mensajes de la fase de corrección (solo-texto en reintentos).
+    const mensajes: PeticionIa['mensajes'] = [...peticion.prompt];
+
+    for (let intento = 0; intento <= reintentos; intento++) {
+      const res =
+        intento === 0
+          ? await this.proveedor.completarVision(peticion)
+          : await this.proveedor.completar({
+              mensajes,
+              temperatura: peticion.temperatura,
+              maxTokens: peticion.maxTokens,
+            });
       const json = extraerJson(res.texto);
       if (json !== undefined) {
         const parsed = opciones.esquema.safeParse(json);

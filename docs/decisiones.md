@@ -55,3 +55,24 @@ módulos genéricos (optimizador ATS, mensajes) quedan al servicio de ese difere
 por muchos competidores maduros (en inglés, público general). La ventaja real está
 en el nicho +40, el enfoque local Latam, la honestidad y el acompañamiento, no en la
 tecnología genérica.
+
+## 2026-10-16 — OCR de hojas de vida vía visión del LLM, retrocompatible (Decisión D3)
+**Decisión:** para leer hojas de vida que llegan como imagen (foto o escaneo), el
+OCR se hace con la capacidad multimodal del propio proveedor de IA, no con una
+librería de OCR nativa (p. ej. Tesseract). La capa `ia` se extiende de forma
+**opcional y retrocompatible**: se añade el tipo `PeticionVision` y el método
+opcional `completarVision?` en la interfaz `ProveedorIa`, implementado SOLO en
+`GeminiProvider` (formato REST `contents[].parts` con `inlineData`). `IaService`
+expone `completarVisionJson`, equivalente multimodal de `completarJson` (valida la
+salida con Zod y reintenta pidiendo corrección sobre texto, sin reenviar la imagen).
+Un `OcrService` aislado en `src/perfil` delega en esa fachada con un prompt propio
+versionado (`ocr-cv.prompt.ts`). Todo el punto multimodal se prueba con IA simulada,
+sin red.
+**Motivo:** cambiar el contrato `completar` a multimodal tocaría los tres proveedores
+y el tipo del que depende todo módulo, y los proveedores OpenAI-compatibles usan otro
+formato de imagen. Hacer `completarVision` opcional mantiene intactos a
+`OpenAICompatibleProvider` y a los dobles simulados (las 14 pruebas previas siguen en
+verde) y aísla el único proveedor con visión. Evitar OCR nativo quita una dependencia
+binaria pesada y reutiliza la infraestructura de IA ya existente. El OCR solo
+transcribe lo visible (nunca inventa) y marca `textoLegible:false` cuando no hay texto,
+en línea con el compliance duro del proyecto.
