@@ -76,3 +76,34 @@ verde) y aísla el único proveedor con visión. Evitar OCR nativo quita una dep
 binaria pesada y reutiliza la infraestructura de IA ya existente. El OCR solo
 transcribe lo visible (nunca inventa) y marca `textoLegible:false` cuando no hay texto,
 en línea con el compliance duro del proyecto.
+
+## 2026-10-17 — Validación de entrada con Zod, no class-validator (D-ZOD)
+**Decisión:** los DTOs del perfil (`POST /perfil/confirmar`, `PATCH /perfil/:id`) se
+validan con **Zod** en el borde, no con class-validator.
+**Motivo:** el proyecto no tiene class-validator y la capa de IA ya valida con Zod;
+mantener Zod evita una dependencia nueva y da coherencia. `.strict()` rechaza campos
+desconocidos (compliance: nunca se cuela `edad` ni `fechaNacimiento`).
+
+## 2026-10-17 — La traducción de error de dominio a HTTP vive en el controller (D-ERRHTTP)
+**Decisión:** `PerfilService` lanza errores de dominio en español; el `PerfilController`
+los traduce a excepciones HTTP (404/400). El servicio no conoce el transporte.
+**Motivo:** mantiene el patrón del backend (`errores.ts` ya está desacoplado de HTTP),
+hace el servicio probable sin levantar la app y evita filtrar errores crudos de Prisma/BD
+al cliente.
+
+## 2026-10-17 — PATCH solo actualiza escalares + objetivo, no colecciones hijas (D-PATCH-ESCALAR)
+**Decisión:** `PATCH /perfil/:id` actualiza los campos escalares del candidato y hace
+upsert del objetivo; NO reemplaza habilidades, experiencias, certificaciones ni idiomas.
+**Motivo:** reemplazar colecciones exige un borrar+recrear transaccional que ningún
+requisito pide ahora. Se deja anotado como pendiente para evitar complejidad prematura.
+
+## 2026-10-17 — Subida de CV y nota de voz diferidas (D-CV)
+**Decisión:** `POST /perfil/cv` (multer + almacenamiento cifrado del `Documento`) y
+`POST /perfil/voz` quedan fuera de esta fase de persistencia.
+**Motivo:** la persistencia del perfil confirmado no las necesita; añadirlas ahora
+mezcla manejo de archivos y almacenamiento con el guardado de datos. Se abordan aparte.
+
+## 2026-10-17 — pgvector / match semántico diferido (D-PGVECTOR)
+**Decisión:** sin columnas vector ni lógica de match en esta fase.
+**Motivo:** el matching es una fase posterior; el schema de persistencia del perfil no
+lo requiere todavía. Se añadirá cuando se implemente el emparejamiento.

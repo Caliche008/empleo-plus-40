@@ -17,6 +17,7 @@ npm-debug.log*
 Thumbs.db
 # Prisma
 backend/prisma/*.db
+backend/src/generated/
 # Coberturas / cachés
 coverage/
 .turbo/
