@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import type {
   OpcionesJson,
   PeticionIa,
@@ -21,7 +21,7 @@ import { loadEnv } from '../common/config/env.js';
 export class IaService {
   private readonly proveedor: ProveedorIa;
 
-  constructor(proveedor?: ProveedorIa) {
+  constructor(@Optional() proveedor?: ProveedorIa) {
     this.proveedor = proveedor ?? IaService.crearDesdeEntorno();
   }
 
