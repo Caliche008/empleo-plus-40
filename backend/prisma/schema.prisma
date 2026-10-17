@@ -1,0 +1,89 @@
+// Esquema de datos del perfil del candidato (fase 2: persistencia).
+// La edad NO existe como campo: nunca se almacena ni se usa para filtrar o
+// puntuar (compliance). `mostrarFechasAntiguas` deja que la persona controle la
+// exposición de fechas antiguas. Todas las relaciones hijas usan
+// `onDelete: Cascade` para que al borrar un Candidato se eliminen su objetivo,
+// sus colecciones y sus documentos en un solo paso (R6).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Candidato {
+  id                    String           @id @default(uuid())
+  telefono              String?          @unique
+  nombre                String?
+  pais                  String           @default("CO")
+  consentimiento        Boolean          @default(false)
+  mostrarFechasAntiguas Boolean          @default(false)
+  objetivo              ObjetivoLaboral?
+  habilidades           Habilidad[]
+  experiencias          Experiencia[]
+  certificaciones       Certificacion[]
+  idiomas               Idioma[]
+  documentos            Documento[]
+  creadoEn              DateTime         @default(now())
+}
+
+model ObjetivoLaboral {
+  id             String    @id @default(uuid())
+  candidatoId    String    @unique
+  candidato      Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  rol            String
+  sector         String?
+  salarioMin     Int?
+  modalidad      String? // presencial | hibrido | remoto
+  ubicacion      String?
+  disponibilidad String?
+}
+
+model Experiencia {
+  id          String    @id @default(uuid())
+  candidatoId String
+  candidato   Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  cargo       String
+  empresa     String?
+  descripcion String
+  logros      String[]
+  desde       String? // texto libre; la persona decide mostrar fechas
+  hasta       String?
+}
+
+model Habilidad {
+  id          String    @id @default(uuid())
+  candidatoId String
+  candidato   Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  nombre      String
+  nivel       String?
+}
+
+model Certificacion {
+  id          String    @id @default(uuid())
+  candidatoId String
+  candidato   Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  nombre      String
+  emisor      String?
+  anio        String?
+}
+
+model Idioma {
+  id          String    @id @default(uuid())
+  candidatoId String
+  candidato   Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  idioma      String
+  nivel       String?
+}
+
+model Documento {
+  id          String    @id @default(uuid())
+  candidatoId String
+  candidato   Candidato @relation(fields: [candidatoId], references: [id], onDelete: Cascade)
+  tipo        String // cv-pdf | cv-docx | cv-imagen | audio
+  url         String
+  creadoEn    DateTime  @default(now())
+}

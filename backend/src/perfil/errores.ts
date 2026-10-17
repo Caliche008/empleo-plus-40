@@ -43,6 +43,68 @@ export class SinTextoLegibleError extends Error {
   }
 }
 
+/**
+ * Falta el consentimiento explícito para guardar el perfil. Nada se persiste
+ * sin él (R6): la persona debe aceptar antes de que guardemos sus datos.
+ */
+export class ConsentimientoRequeridoError extends Error {
+  constructor() {
+    super(
+      'Para guardar tu perfil necesitamos tu consentimiento. ' +
+        'Acepta que guardemos tus datos y volvemos a intentarlo.',
+    );
+    this.name = 'ConsentimientoRequeridoError';
+  }
+}
+
+/**
+ * No existe un perfil con el identificador pedido. El id se recibe solo para
+ * contexto interno y nunca se expone en el mensaje con tecnicismos.
+ */
+export class PerfilNoEncontradoError extends Error {
+  constructor(_id?: string) {
+    super('No encontramos el perfil que buscas.');
+    this.name = 'PerfilNoEncontradoError';
+  }
+}
+
+/**
+ * Ya existe un perfil registrado con ese teléfono. El teléfono es único (sirve
+ * como identificador por WhatsApp), así que no se puede repetir.
+ */
+export class TelefonoYaRegistradoError extends Error {
+  constructor() {
+    super(
+      'Ya existe un perfil registrado con ese teléfono. ' +
+        'Si es tuyo, puedes continuar con el perfil que ya tienes.',
+    );
+    this.name = 'TelefonoYaRegistradoError';
+  }
+}
+
+/**
+ * Los datos recibidos no son válidos. El detalle llega en español simple (lo
+ * arma la validación de entrada) y no filtra nada interno ni el stack de Zod.
+ */
+export class DatosInvalidosError extends Error {
+  constructor(detalle: string) {
+    super(detalle);
+    this.name = 'DatosInvalidosError';
+  }
+}
+
+/**
+ * No se pudo completar una operación contra la base de datos por una causa que
+ * no sabemos traducir a un mensaje concreto. El error crudo de Prisma/BD no se
+ * filtra al cliente (compliance): solo guardamos un mensaje genérico y amable.
+ */
+export class OperacionFallidaError extends Error {
+  constructor() {
+    super('No pudimos completar la operación. Inténtalo de nuevo en un momento.');
+    this.name = 'OperacionFallidaError';
+  }
+}
+
 /** Resultado de extraer texto de un archivo. */
 export interface ResultadoParsing {
   /** Texto plano extraído del archivo (vacío si no había texto legible). */
