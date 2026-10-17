@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { IaService, extraerJson } from './ia.service.js';
 import { IaError } from './ia.types.js';
-import type { PeticionIa, ProveedorIa, RespuestaIa } from './ia.types.js';
+import type {
+  PeticionIa,
+  PeticionVision,
+  ProveedorIa,
+  RespuestaIa,
+} from './ia.types.js';
 
 /**
  * Proveedor simulado que implementa `ProveedorIa`. Devuelve, en orden, las
@@ -37,9 +42,40 @@ class ProveedorSimulado implements ProveedorIa {
   }
 }
 
+/**
+ * Proveedor simulado CON visión. Añade `completarVision`, que consume la misma
+ * cola que `completar`, y registra las peticiones de visión recibidas. Útil para
+ * probar `completarVisionJson` sin red.
+ */
+class ProveedorVisionSimulado extends ProveedorSimulado {
+  /** Peticiones de visión recibidas, en orden. */
+  readonly peticionesVision: PeticionVision[] = [];
+  /** Nº de veces que se invocó `completarVision`. */
+  llamadasVision = 0;
+
+  completarVision(peticion: PeticionVision): Promise<RespuestaIa> {
+    this.llamadasVision++;
+    this.peticionesVision.push(peticion);
+    // Reutiliza la cola de respuestas del padre mapeando a una PeticionIa.
+    return this.completar({
+      mensajes: peticion.prompt,
+      temperatura: peticion.temperatura,
+      maxTokens: peticion.maxTokens,
+    });
+  }
+}
+
 /** Petición mínima reutilizable en las pruebas. */
 function peticionBase(): PeticionIa {
   return { mensajes: [{ rol: 'user', contenido: 'dame el JSON' }] };
+}
+
+/** Petición de visión mínima reutilizable en las pruebas. */
+function peticionVisionBase(): PeticionVision {
+  return {
+    prompt: [{ rol: 'user', contenido: 'transcribe la imagen' }],
+    imagen: { datosBase64: 'AAAA', mimeType: 'image/png' },
+  };
 }
 
 describe('extraerJson', () => {
@@ -167,5 +203,75 @@ describe('IaService.completarJson — reintentos con proveedor simulado', () => 
 
     // reintentos: 1 → dos intentos en total.
     expect(proveedor.llamadas).toBe(2);
+  });
+});
+
+describe('IaService.completarVisionJson — proveedor con visión simulado', () => {
+  const esquema = z.object({ texto: z.string(), textoLegible: z.boolean() });
+
+  it('V1. devuelve el dato tipado cuando el proveedor con visión cumple el esquema', async () => {
+    const proveedor = new ProveedorVisionSimulado([
+      '{"texto":"Hoja de vida","textoLegible":true}',
+    ]);
+    const servicio = new IaService(proveedor);
+
+    const dato = await servicio.completarVisionJson(peticionVisionBase(), {
+      esquema,
+    });
+
+    expect(dato).toEqual({ texto: 'Hoja de vida', textoLegible: true });
+    // El primer intento usa visión; no se tocó `completar`.
+    expect(proveedor.llamadasVision).toBe(1);
+    expect(proveedor.llamadas).toBe(1);
+    expect(proveedor.peticionesVision[0].imagen.mimeType).toBe('image/png');
+  });
+
+  it('V2. reintenta ante JSON inválido reusando el completado de texto (sin reenviar imagen)', async () => {
+    const proveedor = new ProveedorVisionSimulado([
+      'no soy json',
+      '{"texto":"ok","textoLegible":true}',
+    ]);
+    const servicio = new IaService(proveedor);
+
+    const dato = await servicio.completarVisionJson(peticionVisionBase(), {
+      esquema,
+    });
+
+    expect(dato).toEqual({ texto: 'ok', textoLegible: true });
+    // Un solo intento de visión; el reintento fue por texto.
+    expect(proveedor.llamadasVision).toBe(1);
+    // Dos llamadas totales a `completar` (visión reusa `completar` internamente
+    // en el simulado + el reintento de texto).
+    expect(proveedor.llamadas).toBe(2);
+
+    // El reintento incorpora la respuesta previa y un mensaje de corrección.
+    const segunda = proveedor.peticiones[1];
+    const ultimo = segunda.mensajes[segunda.mensajes.length - 1];
+    expect(ultimo.rol).toBe('user');
+    expect(ultimo.contenido).toContain('JSON válido');
+    expect(
+      segunda.mensajes.some(
+        (m) => m.rol === 'assistant' && m.contenido === 'no soy json',
+      ),
+    ).toBe(true);
+  });
+
+  it('V3. lanza IaError "peticion" recuperable:false si el proveedor no soporta visión', async () => {
+    const proveedor = new ProveedorSimulado(['irrelevante']);
+    const servicio = new IaService(proveedor);
+
+    try {
+      await servicio.completarVisionJson(peticionVisionBase(), { esquema });
+      expect.fail('debía lanzar IaError');
+    } catch (e) {
+      expect(e).toBeInstanceOf(IaError);
+      const error = e as IaError;
+      expect(error.tipo).toBe('peticion');
+      expect(error.recuperable).toBe(false);
+      expect(error.proveedor).toBe(proveedor.nombre);
+    }
+
+    // No se intentó ningún completado: falla antes de llamar al proveedor.
+    expect(proveedor.llamadas).toBe(0);
   });
 });
