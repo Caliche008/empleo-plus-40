@@ -69,6 +69,20 @@ export class PerfilNoEncontradoError extends Error {
 }
 
 /**
+ * Ya existe un perfil registrado con ese teléfono. El teléfono es único (sirve
+ * como identificador por WhatsApp), así que no se puede repetir.
+ */
+export class TelefonoYaRegistradoError extends Error {
+  constructor() {
+    super(
+      'Ya existe un perfil registrado con ese teléfono. ' +
+        'Si es tuyo, puedes continuar con el perfil que ya tienes.',
+    );
+    this.name = 'TelefonoYaRegistradoError';
+  }
+}
+
+/**
  * Los datos recibidos no son válidos. El detalle llega en español simple (lo
  * arma la validación de entrada) y no filtra nada interno ni el stack de Zod.
  */

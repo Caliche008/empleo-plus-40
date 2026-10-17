@@ -7,6 +7,7 @@ import {
   ConsentimientoRequeridoError,
   OperacionFallidaError,
   PerfilNoEncontradoError,
+  TelefonoYaRegistradoError,
 } from './errores.js';
 
 /**
@@ -24,6 +25,9 @@ const INCLUDE_PERFIL = {
 
 /** Código de Prisma para "registro no encontrado". */
 const PRISMA_NO_ENCONTRADO = 'P2025';
+
+/** Código de Prisma para violación de restricción única (p. ej. teléfono). */
+const PRISMA_UNICO_VIOLADO = 'P2002';
 
 /**
  * Persistencia del perfil del candidato sobre Prisma/Neon. El servicio queda
@@ -96,10 +100,17 @@ export class PerfilService {
 
   /** Devuelve el perfil con sus relaciones o lanza `PerfilNoEncontradoError`. */
   async obtener(id: string) {
-    const candidato = await this.prisma.candidato.findUnique({
-      where: { id },
-      include: INCLUDE_PERFIL,
-    });
+    let candidato;
+    try {
+      candidato = await this.prisma.candidato.findUnique({
+        where: { id },
+        include: INCLUDE_PERFIL,
+      });
+    } catch (error) {
+      // Un fallo de la base de datos al leer se traduce a dominio, igual que en
+      // el resto de métodos; nunca se filtra el error crudo de Prisma.
+      throw this.traducirError(error, id);
+    }
     if (!candidato) {
       throw new PerfilNoEncontradoError(id);
     }
@@ -156,15 +167,19 @@ export class PerfilService {
 
   /**
    * Traduce errores crudos de Prisma a errores de dominio. `P2025` se mapea a
-   * `PerfilNoEncontradoError`; cualquier otro se vuelve `OperacionFallidaError`
+   * `PerfilNoEncontradoError` y `P2002` (restricción única) a
+   * `TelefonoYaRegistradoError`; cualquier otro se vuelve `OperacionFallidaError`
    * sin filtrar el mensaje interno de la base de datos (compliance).
    */
   private traducirError(error: unknown, id?: string): Error {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === PRISMA_NO_ENCONTRADO
-    ) {
-      return new PerfilNoEncontradoError(id);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === PRISMA_NO_ENCONTRADO) {
+        return new PerfilNoEncontradoError(id);
+      }
+      if (error.code === PRISMA_UNICO_VIOLADO) {
+        // El único campo con restricción de unicidad del modelo es el teléfono.
+        return new TelefonoYaRegistradoError();
+      }
     }
     return new OperacionFallidaError();
   }

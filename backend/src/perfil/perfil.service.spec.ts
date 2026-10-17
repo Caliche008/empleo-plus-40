@@ -5,6 +5,7 @@ import {
   ConsentimientoRequeridoError,
   OperacionFallidaError,
   PerfilNoEncontradoError,
+  TelefonoYaRegistradoError,
 } from './errores.js';
 import { PerfilService } from './perfil.service.js';
 
@@ -119,6 +120,20 @@ describe('PerfilService.guardar', () => {
       expect((e as Error).message).not.toMatch(/Neon|host interno/);
     }
   });
+
+  it('P8. teléfono duplicado (P2002) lanza TelefonoYaRegistradoError con mensaje específico', async () => {
+    const { prisma, candidato } = crearPrismaFalso();
+    candidato.create.mockRejectedValue(errorPrisma('P2002'));
+    const servicio = new PerfilService(prisma);
+
+    try {
+      await servicio.guardar(perfilBase());
+      expect.fail('debía lanzar TelefonoYaRegistradoError');
+    } catch (e) {
+      expect(e).toBeInstanceOf(TelefonoYaRegistradoError);
+      expect((e as Error).message).toMatch(/teléfono/i);
+    }
+  });
 });
 
 describe('PerfilService.obtener', () => {
@@ -142,6 +157,20 @@ describe('PerfilService.obtener', () => {
 
     candidato.findUnique.mockResolvedValue(null);
     await expect(servicio.obtener('no-existe')).rejects.toBeInstanceOf(PerfilNoEncontradoError);
+  });
+
+  it('P4b. un fallo de BD al leer se traduce a error de dominio sin filtrar el mensaje crudo', async () => {
+    const { prisma, candidato } = crearPrismaFalso();
+    candidato.findUnique.mockRejectedValue(new Error('conexión a Neon caída: host interno'));
+    const servicio = new PerfilService(prisma);
+
+    try {
+      await servicio.obtener('a1');
+      expect.fail('debía lanzar un error de dominio');
+    } catch (e) {
+      expect(e).toBeInstanceOf(OperacionFallidaError);
+      expect((e as Error).message).not.toMatch(/Neon|host interno/);
+    }
   });
 });
 
