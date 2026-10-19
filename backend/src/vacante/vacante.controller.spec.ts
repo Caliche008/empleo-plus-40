@@ -1,6 +1,11 @@
-import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, NotFoundException } from '@nestjs/common';
 import type { VacanteAnalizada } from '../ia/prompts/analizar-vacante.prompt.js';
-import { AnalisisFallidoError, TextoVacanteInvalidoError } from './errores.js';
+import {
+  AnalisisFallidoError,
+  OperacionFallidaError,
+  TextoVacanteInvalidoError,
+  VacanteNoEncontradaError,
+} from './errores.js';
 import { VacanteController } from './vacante.controller.js';
 import type { VacanteService } from './vacante.service.js';
 
@@ -11,14 +16,16 @@ import type { VacanteService } from './vacante.service.js';
  */
 function crearControlador() {
   const analizar = vi.fn();
-  const vacante = { analizar } as unknown as VacanteService;
+  const obtener = vi.fn();
+  const vacante = { analizar, obtener } as unknown as VacanteService;
   const controlador = new VacanteController(vacante);
-  return { controlador, analizar };
+  return { controlador, analizar, obtener };
 }
 
-/** Resultado mínimo válido que el servicio devolvería. */
-function analisisFalso(): VacanteAnalizada {
+/** Resultado mínimo válido que el servicio devolvería, con el id persistido. */
+function analisisFalso(): VacanteAnalizada & { id: string } {
   return {
+    id: 'vac-1',
     cargo: 'Analista',
     obligatorios: [],
     deseables: [],
@@ -28,7 +35,7 @@ function analisisFalso(): VacanteAnalizada {
 }
 
 describe('VacanteController.analizar', () => {
-  it('C1. body válido llama a vacante.analizar(texto) y devuelve el resultado', async () => {
+  it('C1. body válido llama a vacante.analizar(texto) y devuelve el resultado con id', async () => {
     const { controlador, analizar } = crearControlador();
     const resultado = analisisFalso();
     analizar.mockResolvedValue(resultado);
@@ -39,6 +46,7 @@ describe('VacanteController.analizar', () => {
     expect(analizar).toHaveBeenCalledTimes(1);
     expect(analizar).toHaveBeenCalledWith(texto);
     expect(respuesta).toBe(resultado);
+    expect((respuesta as { id: string }).id).toBe('vac-1');
   });
 
   it('C2. body inválido (sin texto) lanza BadRequestException (400) y no llama al servicio', async () => {
@@ -86,6 +94,46 @@ describe('VacanteController.analizar', () => {
       expect.fail('debía re-lanzar el error genérico');
     } catch (e) {
       expect(e).toBe(crudo);
+    }
+  });
+});
+
+describe('VacanteController.obtener', () => {
+  it('C6. id existente llama a vacante.obtener(id) y devuelve la vacante con alertas', async () => {
+    const { controlador, obtener } = crearControlador();
+    const guardada = { id: 'vac-1', cargo: 'Analista', alertas: [] };
+    obtener.mockResolvedValue(guardada);
+
+    const respuesta = await controlador.obtener('vac-1');
+
+    expect(obtener).toHaveBeenCalledWith('vac-1');
+    expect(respuesta).toBe(guardada);
+  });
+
+  it('C7. VacanteNoEncontradaError se traduce a NotFoundException (404)', async () => {
+    const { controlador, obtener } = crearControlador();
+    const dominio = new VacanteNoEncontradaError('vac-x');
+    obtener.mockRejectedValue(dominio);
+
+    try {
+      await controlador.obtener('vac-x');
+      expect.fail('debía lanzar NotFoundException');
+    } catch (e) {
+      expect(e).toBeInstanceOf(NotFoundException);
+      expect((e as NotFoundException).message).toBe(dominio.message);
+    }
+  });
+
+  it('C8. (compliance) OperacionFallidaError del servicio se re-lanza sin traducir ni filtrar', async () => {
+    const { controlador, obtener } = crearControlador();
+    const dominio = new OperacionFallidaError();
+    obtener.mockRejectedValue(dominio);
+
+    try {
+      await controlador.obtener('vac-x');
+      expect.fail('debía re-lanzar el error de dominio');
+    } catch (e) {
+      expect(e).toBe(dominio);
     }
   });
 });

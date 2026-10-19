@@ -87,3 +87,35 @@ model Documento {
   url         String
   creadoEn    DateTime  @default(now())
 }
+
+// Vacante analizada (fase 2 del módulo). Guarda el TEXTO original pegado por la
+// persona y el análisis de la IA, nunca datos de personas: la edad no existe
+// como campo ni se infiere (compliance). `candidatoId` es opcional y suelto (sin
+// FK a Candidato) para no tocar el modelo Candidato ni añadir complejidad; si el
+// módulo de match necesita la relación se añadirá entonces como opcional.
+model Vacante {
+  id                String   @id @default(uuid())
+  candidatoId       String?
+  cargo             String
+  textoOriginal     String
+  obligatorios      String[]
+  deseables         String[]
+  habilidades       String[]
+  experienciaPedida String?
+  ubicacion         String?
+  modalidad         String?
+  salario           String?
+  alertas           Alerta[]
+  creadoEn          DateTime @default(now())
+}
+
+// Bandera roja detectada en una vacante. `onDelete: Cascade` para que al borrar
+// una Vacante se eliminen sus alertas en un solo paso, igual que las relaciones
+// hijas del Candidato.
+model Alerta {
+  id        String  @id @default(uuid())
+  vacanteId String
+  vacante   Vacante @relation(fields: [vacanteId], references: [id], onDelete: Cascade)
+  tipo      String // edad | salario-oculto | requisitos-inflados | otro
+  detalle   String
+}
