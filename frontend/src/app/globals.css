@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Fondos y superficies */
+  --color-fondo: #0b1020;
+  --color-superficie: #141a2e;
+  --color-superficie-alta: #1e2742;
+  --color-borde: #2c3658;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Texto */
+  --color-texto: #f3f5fb;
+  --color-texto-suave: #aeb7d6;
+  --color-sobre-acento: #ffffff;
+
+  /* Acento morado (SOLO como fondo/borde/foco, nunca texto pequeno).
+     Base y hover van con TEXTO BLANCO; hover es mas oscuro (mas contraste). */
+  --color-acento: #7c3aed; /* fondo boton/chip; blanco ~5.7:1 (pasa AA normal) */
+  --color-acento-hover: #6d28d9; /* fondo hover/activo; blanco ~7.1:1 */
+  --color-acento-foco: #a78bfa; /* anillo de foco; ~6.96:1 sobre fondo */
+
+  /* Estados */
+  --color-exito: #34d399;
+  --color-exito-texto: #6ee7b7;
+  --color-aviso: #fbbf24;
+  --color-aviso-texto: #fcd34d;
+  --color-error: #f87171;
+  --color-error-fondo: #7f1d1d;
+
+  /* Tipografia */
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --text-base: 1.125rem;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Radios y foco */
+  --radius-tarjeta: 1rem;
+  --radius-control: 0.75rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Respeta la preferencia de movimiento reducido del sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
