@@ -15,11 +15,11 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { actualizarPerfilSchema } from './dto/actualizar-perfil.dto.js';
 import { crearPerfilSchema } from './dto/crear-perfil.dto.js';
 import { PREGUNTAS_PERFIL, type Pregunta } from './dto/preguntas.dto.js';
 import { validarCon } from './dto/validar.js';
+import { CAMPO_ARCHIVO, CvUploadInterceptor } from './cv-upload.interceptor.js';
 import {
   ArchivoDemasiadoGrandeError,
   ConsentimientoRequeridoError,
@@ -30,13 +30,6 @@ import {
 } from './errores.js';
 import { PerfilExtractorService } from './perfil-extractor.service.js';
 import { PerfilService } from './perfil.service.js';
-
-/**
- * Límite de tamaño del archivo subido (10 MB), coherente con el límite de
- * dominio de `ArchivoDemasiadoGrandeError`. Actúa como barrera temprana del
- * interceptor para no bufferizar en memoria archivos enormes.
- */
-const MAX_BYTES_SUBIDA = 10 * 1024 * 1024;
 
 /**
  * Endpoints HTTP del perfil del candidato. La validación de entrada se hace con
@@ -72,15 +65,20 @@ export class PerfilController {
    * Se declara ANTES de `/:id` para que la ruta estática `cv` no sea capturada
    * por la ruta con parámetro. La respuesta es `{ borrador }` para comunicar que
    * es un borrador pendiente de confirmación vía `POST /perfil/confirmar`.
+   *
+   * Usa `CvUploadInterceptor` (en vez de `FileInterceptor`) para que el límite
+   * de tamaño y cualquier otro fallo de multer se traduzcan a mensajes en
+   * español simple en lugar del mensaje crudo en inglés.
    */
   @Post('cv')
-  @UseInterceptors(
-    FileInterceptor('archivo', { limits: { fileSize: MAX_BYTES_SUBIDA } }),
-  )
+  // 200 (no 201): el borrador NO se crea ni persiste como recurso; se devuelve
+  // para que la persona lo confirme después vía `POST /perfil/confirmar`.
+  @HttpCode(200)
+  @UseInterceptors(CvUploadInterceptor)
   async subirCv(@UploadedFile() archivo?: Express.Multer.File) {
     if (!archivo) {
       throw new BadRequestException(
-        "Debes adjuntar tu hoja de vida en el campo 'archivo'.",
+        `Debes adjuntar tu hoja de vida en el campo '${CAMPO_ARCHIVO}'.`,
       );
     }
     try {
