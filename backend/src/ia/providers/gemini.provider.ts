@@ -44,7 +44,12 @@ export class GeminiProvider implements ProveedorIa {
         })),
         generationConfig: {
           temperature: peticion.temperatura ?? 0.3,
-          maxOutputTokens: peticion.maxTokens ?? 1500,
+          maxOutputTokens: peticion.maxTokens ?? 4096,
+          // Desactivamos el "pensamiento" (thinking) de los modelos Gemini 3.x:
+          // para extracción a JSON estructurado no aporta y, en cambio, consumía
+          // el presupuesto de tokens (dejando el JSON incompleto) y disparaba la
+          // latencia por encima del timeout. Con budget 0 la respuesta es directa.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       },
     });
@@ -83,7 +88,9 @@ export class GeminiProvider implements ProveedorIa {
         contents: [{ role: 'user', parts }],
         generationConfig: {
           temperature: peticion.temperatura ?? 0.1,
-          maxOutputTokens: peticion.maxTokens ?? 2000,
+          maxOutputTokens: peticion.maxTokens ?? 4096,
+          // Sin "pensamiento": el OCR es transcripción directa, no razonamiento.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       },
     });

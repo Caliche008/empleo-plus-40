@@ -19,7 +19,7 @@ export interface OpcionesFetch {
 
 /** POST JSON con timeout y errores normalizados a IaError. */
 export async function fetchJson<T>(url: string, opts: OpcionesFetch): Promise<T> {
-  const { metodo = 'POST', cabeceras = {}, cuerpo, timeoutMs = 60_000, proveedor } = opts;
+  const { metodo = 'POST', cabeceras = {}, cuerpo, timeoutMs = 90_000, proveedor } = opts;
   const controlador = new AbortController();
   const temporizador = setTimeout(() => controlador.abort(), timeoutMs);
 
