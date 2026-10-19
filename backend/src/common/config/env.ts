@@ -12,6 +12,7 @@ const envSchema = z.object({
 
   IA_PROVIDER: z.enum(['gemini', 'openrouter', 'groq']).default('gemini'),
   IA_MODEL: z.string().default('gemini-flash-latest'),
+  IA_EMBED_MODEL: z.string().default('text-embedding-004'),
   GEMINI_API_KEY: z.string().optional().default(''),
   OPENROUTER_API_KEY: z.string().optional().default(''),
   OPENROUTER_MODEL: z.string().default('meta-llama/llama-3.3-70b-instruct:free'),

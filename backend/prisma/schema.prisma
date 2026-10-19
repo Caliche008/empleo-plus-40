@@ -6,12 +6,14 @@
 // sus colecciones y sus documentos en un solo paso (R6).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 model Candidato {
@@ -118,4 +120,32 @@ model Alerta {
   vacante   Vacante @relation(fields: [vacanteId], references: [id], onDelete: Cascade)
   tipo      String // edad | salario-oculto | requisitos-inflados | otro
   detalle   String
+}
+
+// Match de compatibilidad perfil↔vacante. NO almacena edad, nombre, género ni
+// fecha de nacimiento: el cálculo que lo produce nunca los recibe (compliance §2,
+// R2). `desglose` y `brechas` son JSON con forma estable documentada en el diseño.
+// `candidatoId`/`vacanteId` se guardan sueltos (sin FK), igual que
+// `Vacante.candidatoId`, para no acoplar los modelos existentes; la existencia la
+// valida el servicio de match contra los servicios de dominio (404), no una FK.
+model Match {
+  id            String   @id @default(uuid())
+  candidatoId   String
+  vacanteId     String
+  puntaje       Int // 0..100 (entero)
+  desglose      Json // DesgloseMatch
+  cubiertos     String[] // requisitos de la vacante que el perfil SÍ cubre
+  brechas       Json // BrechaMatch[]
+  recomendacion String // 'postular' | 'postular-ajustes' | 'descartar'
+  explicacion   String // resumen en lenguaje simple (de la IA o del respaldo)
+  creadoEn      DateTime @default(now())
+
+  // Columna vectorial de PREPARACIÓN para búsquedas semánticas futuras. En esta
+  // fase SIEMPRE queda NULL: el cálculo compara vectores en memoria y no define
+  // "el vector del par". Administrada por SQL crudo; cuando se use se
+  // escribirá/leerá con $queryRaw/$executeRaw.
+  // embedding Unsupported("vector(768)")?
+
+  @@index([candidatoId])
+  @@index([vacanteId])
 }

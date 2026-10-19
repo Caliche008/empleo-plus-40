@@ -1,9 +1,11 @@
 import { Injectable, Optional } from '@nestjs/common';
 import type {
   OpcionesJson,
+  PeticionEmbedding,
   PeticionIa,
   PeticionVision,
   ProveedorIa,
+  RespuestaEmbedding,
   RespuestaIa,
 } from './ia.types.js';
 import { IaError } from './ia.types.js';
@@ -45,12 +47,29 @@ export class IaService {
         );
       case 'gemini':
       default:
-        return new GeminiProvider(env.IA_MODEL, env.GEMINI_API_KEY);
+        return new GeminiProvider(env.IA_MODEL, env.GEMINI_API_KEY, env.IA_EMBED_MODEL);
     }
   }
 
   completar(peticion: PeticionIa): Promise<RespuestaIa> {
     return this.proveedor.completar(peticion);
+  }
+
+  /**
+   * Genera embeddings con el proveedor activo. Si el proveedor no soporta
+   * embeddings, lanza IaError('peticion', recuperable:false) para que la capa
+   * semántica caiga a su respaldo determinista sin red.
+   */
+  async generarEmbedding(peticion: PeticionEmbedding): Promise<RespuestaEmbedding> {
+    if (!this.proveedor.generarEmbedding) {
+      throw new IaError(
+        'El proveedor de IA activo no genera embeddings.',
+        'peticion',
+        this.proveedor.nombre,
+        false,
+      );
+    }
+    return this.proveedor.generarEmbedding(peticion);
   }
 
   /**

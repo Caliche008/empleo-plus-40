@@ -32,6 +32,19 @@ export interface RespuestaIa {
   latenciaMs: number;
 }
 
+/** Petición de embeddings: uno o varios textos a vectorizar en una llamada. */
+export interface PeticionEmbedding {
+  textos: string[];
+}
+
+/** Respuesta de embeddings: un vector por texto, en el mismo orden de entrada. */
+export interface RespuestaEmbedding {
+  vectores: number[][];
+  proveedor: string;
+  modelo: string;
+  dimension: number;
+}
+
 /**
  * Contrato que implementa cada adaptador de proveedor LLM (Gemini, OpenRouter,
  * Groq…). Permite intercambiar el proveedor sin tocar la lógica de negocio.
@@ -46,6 +59,12 @@ export interface ProveedorIa {
    * el contrato sin cambios.
    */
   completarVision?(peticion: PeticionVision): Promise<RespuestaIa>;
+  /**
+   * Capacidad OPCIONAL de embeddings. Solo la implementan los proveedores que
+   * generan vectores (p. ej. Gemini). Los que no la definen siguen cumpliendo
+   * el contrato sin cambios.
+   */
+  generarEmbedding?(peticion: PeticionEmbedding): Promise<RespuestaEmbedding>;
 }
 
 /**

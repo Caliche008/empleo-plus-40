@@ -90,3 +90,45 @@ datos.
 `strict`. Como `tsconfig.json` restringe `types`, se añadió `"multer"` a ese
 array para que la augmentación global `Express.Multer` quede visible al
 compilador.
+
+## MÓDULO match-compatibilidad — FEAT-001 (cimientos de datos e IA)
+
+### Precondición pgvector en Neon (verificada antes de migrar)
+
+Antes de aplicar la migración `add_match` se consultó la BD de destino con
+`SELECT name, default_version, installed_version FROM pg_available_extensions
+WHERE name = 'vector';`. Resultado: **la extensión `vector` SÍ está disponible**
+en Neon (`default_version` 0.8.6, `installed_version` nulo antes de la
+migración). Por tanto **NO se activó el modo respaldo**: la migración crea la
+extensión y la columna vectorial de preparación. La consulta se ejecutó con un
+script temporal (eliminado tras usarse) que nunca imprime `DATABASE_URL`.
+
+### Migración `add_match` (sin reset)
+
+Carpeta de migración real: **`prisma/migrations/20261019235131_add_match`**.
+Generada con `prisma migrate dev --name add_match --create-only`, revisada a
+mano y aplicada con `prisma migrate deploy` (no interactivo). NUNCA se ejecutó
+`prisma migrate reset`. El SQL contiene `CREATE EXTENSION IF NOT EXISTS
+"vector";`, `CREATE TABLE "Match"`, sus dos índices y, añadido a mano,
+`ALTER TABLE "Match" ADD COLUMN "embedding" vector(768);` (NULLable, sin
+`NOT NULL`). No contiene ningún `DROP`/reset de tablas existentes.
+
+### Columna `embedding vector(768)` de preparación
+
+La columna se crea ahora como preparación para búsquedas vectoriales futuras,
+pero en esta fase **siempre queda NULL**: el cálculo del match compara vectores
+en memoria y no define "el vector del par", así que ningún camino de código la
+escribe. En el modelo Prisma la columna queda comentada
+(`// embedding Unsupported("vector(768)")?`) para no exponerla en el cliente
+tipado; se administra con SQL crudo cuando se use.
+
+### Embeddings en la capa IA (retrocompatible)
+
+Se eligió el modelo de embeddings **`text-embedding-004`** de Gemini (endpoint
+`:embedContent` de la Generative Language API v1beta, misma clave que el texto),
+dimensión **768** (coincide con `vector(768)`), `taskType` constante
+`SEMANTIC_SIMILARITY`. Se añadió `IA_EMBED_MODEL` a `env.ts` con ese valor por
+defecto; `GEMINI_API_KEY` permanece `optional().default('')` para no romper los
+specs que corren sin red. El método `generarEmbedding` es **opcional** en el
+contrato `ProveedorIa` (solo lo implementa `GeminiProvider`), de modo que no
+altera ninguna firma existente ni rompe las pruebas.
