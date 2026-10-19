@@ -8,7 +8,7 @@
       "sin texto legible". (R1)
 - [ ] 5. Contrato `PerfilExtraido` con esquema Zod y prompt versionado en `ia/prompts`.
       Prueba del prompt con un CV de ejemplo. (R4)
-- [ ] 6. Endpoint POST `/perfil/cv`: parsear + extraer + devolver borrador (sin guardar). (R1, R4)
+- [x] 6. Endpoint POST `/perfil/cv`: parsear + extraer + devolver borrador (sin guardar). (R1, R4)
 - [ ] 7. TranscripcionService + endpoint POST `/perfil/voz` (transcribir + borrador). (R3)
 - [ ] 8. Preguntas de creación guiada: endpoint GET `/perfil/preguntas` y validación. (R2)
 - [ ] 9. Endpoint POST `/perfil/confirmar`: guardar perfil confirmado/editado. (R4)
