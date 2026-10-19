@@ -19,6 +19,12 @@ export interface AlertaVacante {
  * vacíos); los campos opcionales se omiten cuando la oferta no los declara.
  */
 export interface VacanteAnalizada {
+  /**
+   * Id de la vacante persistida por el backend. Opcional: el análisis se
+   * devuelve siempre con `id` tras guardarse, pero la pantalla actual no lo
+   * necesita; queda disponible para referenciar la vacante (módulo de match).
+   */
+  id?: string;
   cargo: string;
   obligatorios: string[];
   deseables: string[];

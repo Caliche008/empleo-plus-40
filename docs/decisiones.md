@@ -107,3 +107,13 @@ mezcla manejo de archivos y almacenamiento con el guardado de datos. Se abordan 
 **Decisión:** sin columnas vector ni lógica de match en esta fase.
 **Motivo:** el matching es una fase posterior; el schema de persistencia del perfil no
 lo requiere todavía. Se añadirá cuando se implemente el emparejamiento.
+
+## 2026-10-19 — POST /vacante/analizar persiste siempre y devuelve el id (D-VACANTE-PERSIST)
+**Decisión:** `POST /vacante/analizar` guarda SIEMPRE la vacante analizada (con sus
+alertas anidadas) y devuelve el análisis con un campo `id` añadido. En el frontend `id`
+es OPCIONAL en la interfaz `VacanteAnalizada`; la pantalla actual no cambia su lógica.
+`candidatoId` se guarda como `String?` suelto (sin FK a Candidato) por ahora.
+**Motivo:** el módulo de match necesitará referenciar vacantes por id; guardar en el
+mismo paso evita un endpoint extra de "guardar" y mantiene el flujo del frontend intacto
+(una sola llamada). La FK a Candidato se añadirá como relación opcional si el match la
+necesita, sin tocar hoy el modelo Candidato.

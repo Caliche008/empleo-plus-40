@@ -37,3 +37,27 @@ export class AnalisisFallidoError extends Error {
     this.name = 'AnalisisFallidoError';
   }
 }
+
+/**
+ * No existe una vacante con el identificador pedido. El id se recibe solo para
+ * contexto interno y nunca se expone en el mensaje con tecnicismos (mismo patrón
+ * que `PerfilNoEncontradoError`).
+ */
+export class VacanteNoEncontradaError extends Error {
+  constructor(_id?: string) {
+    super('No encontramos la vacante que buscas.');
+    this.name = 'VacanteNoEncontradaError';
+  }
+}
+
+/**
+ * No se pudo completar una operación contra la base de datos por una causa que
+ * no sabemos traducir a un mensaje concreto. El error crudo de Prisma/BD no se
+ * filtra al cliente (compliance): solo guardamos un mensaje genérico y amable.
+ */
+export class OperacionFallidaError extends Error {
+  constructor() {
+    super('No pudimos completar la operación. Inténtalo de nuevo en un momento.');
+    this.name = 'OperacionFallidaError';
+  }
+}
