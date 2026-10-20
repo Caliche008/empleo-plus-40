@@ -1,7 +1,9 @@
 /**
- * Puente provisional sin autenticacion: pasa el borrador del perfil y el id
- * confirmado entre pantallas vIa `sessionStorage`. Documentado como temporal; se
- * reemplaza cuando exista sesion real.
+ * Puente provisional sin autenticacion: pasa entre pantallas (vIa
+ * `sessionStorage`) el borrador del perfil, el id del perfil confirmado y el id
+ * de la ultima vacante analizada. Asi la "ruta feliz" (perfil -> vacante ->
+ * compatibilidad) fluye sin pedir identificadores a mano. Documentado como
+ * temporal; se reemplaza cuando exista sesion real.
  */
 
 import type { CrearPerfil } from "@/lib/api/tipos-perfil";
@@ -11,6 +13,7 @@ export type BorradorPerfil = CrearPerfil;
 
 export const CLAVE_BORRADOR = "ep40.borrador-perfil";
 export const CLAVE_PERFIL_ID = "ep40.perfil-id";
+export const CLAVE_VACANTE_ID = "ep40.vacante-id";
 
 /** Guarda el borrador en sessionStorage (JSON). */
 export function guardarBorrador(borrador: BorradorPerfil): void {
@@ -43,4 +46,14 @@ export function guardarPerfilId(id: string): void {
 /** Lee el id del perfil confirmado (o null). */
 export function leerPerfilId(): string | null {
   return sessionStorage.getItem(CLAVE_PERFIL_ID);
+}
+
+/** Guarda el id de la ultima vacante analizada y persistida. */
+export function guardarVacanteId(id: string): void {
+  sessionStorage.setItem(CLAVE_VACANTE_ID, id);
+}
+
+/** Lee el id de la ultima vacante analizada (o null). */
+export function leerVacanteId(): string | null {
+  return sessionStorage.getItem(CLAVE_VACANTE_ID);
 }
