@@ -23,9 +23,9 @@ function resultadoEjemplo(): ResultadoMatch {
         {
           criterio: "habilidades",
           valor: 0.8,
-          pesoBase: 0.4,
-          pesoEfectivo: 0.4,
-          aporte: 0.32,
+          pesoBase: 35,
+          pesoEfectivo: 35,
+          aporte: 28,
           datoPresente: true,
         },
       ],

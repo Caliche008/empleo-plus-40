@@ -216,8 +216,8 @@ function Resultado({ match }: { match: ResultadoMatch }) {
 /** Una fila del desglose: criterio, su aporte y si su peso se redistribuyó. */
 function Desglose({ criterio }: { criterio: CriterioDesglose }) {
   const nombre = NOMBRE_CRITERIO[criterio.criterio] ?? criterio.criterio;
-  // El aporte llega en 0..1 (fracción del puntaje); se muestra como porcentaje.
-  const aporte = Math.round(criterio.aporte * 100);
+  // El aporte ya viene en puntos (pesoEfectivo × valor, 0..100); solo se redondea.
+  const aporte = Math.round(criterio.aporte);
   const redistribuido = criterio.pesoEfectivo !== criterio.pesoBase;
 
   return (
