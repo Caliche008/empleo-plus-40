@@ -1,14 +1,20 @@
 import type {
   MensajeIa,
+  PeticionEmbedding,
   PeticionIa,
   PeticionVision,
   ProveedorIa,
+  RespuestaEmbedding,
   RespuestaIa,
 } from '../ia.types.js';
 import { fetchJson } from './http.js';
 
 interface RespuestaGemini {
   candidates?: { content?: { parts?: { text?: string }[] } }[];
+}
+
+interface RespuestaEmbedGemini {
+  embedding?: { values?: number[] };
 }
 
 /** Separa el/los mensaje(s) de sistema del resto (Gemini los trata aparte). */
@@ -27,6 +33,9 @@ export class GeminiProvider implements ProveedorIa {
   constructor(
     readonly modelo: string,
     private readonly apiKey: string,
+    // Modelo de embeddings (p. ej. text-embedding-004). Separado del modelo de
+    // texto porque Gemini los expone en endpoints distintos.
+    private readonly modeloEmbed = 'text-embedding-004',
   ) {}
 
   async completar(peticion: PeticionIa): Promise<RespuestaIa> {
@@ -98,5 +107,36 @@ export class GeminiProvider implements ProveedorIa {
     const texto =
       data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim() ?? '';
     return { texto, proveedor: this.nombre, modelo: this.modelo, latenciaMs: Date.now() - inicio };
+  }
+
+  /**
+   * Genera embeddings con el modelo de embeddings de Gemini (`:embedContent`).
+   * Hace una llamada HTTP por texto (con pocos textos el batch no aporta) y
+   * arma `vectores` en el MISMO orden que `peticion.textos`. Usa `taskType`
+   * SEMANTIC_SIMILARITY en todos los textos para que los cosenos sean
+   * comparables. fetchJson no reintenta en red (timeout 90s); la resiliencia la
+   * da el respaldo determinista de la capa semántica. La clave nunca se loguea.
+   */
+  async generarEmbedding(peticion: PeticionEmbedding): Promise<RespuestaEmbedding> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modeloEmbed}:embedContent?key=${this.apiKey}`;
+
+    const vectores: number[][] = [];
+    for (const texto of peticion.textos) {
+      const data = await fetchJson<RespuestaEmbedGemini>(url, {
+        proveedor: this.nombre,
+        cuerpo: {
+          content: { parts: [{ text: texto }] },
+          taskType: 'SEMANTIC_SIMILARITY',
+        },
+      });
+      vectores.push(data.embedding?.values ?? []);
+    }
+
+    return {
+      vectores,
+      proveedor: this.nombre,
+      modelo: this.modeloEmbed,
+      dimension: vectores[0]?.length ?? 0,
+    };
   }
 }
