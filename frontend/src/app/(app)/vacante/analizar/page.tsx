@@ -9,6 +9,7 @@ import { Tarjeta } from "@/components/tarjeta";
 import { ErrorApi } from "@/lib/api/cliente";
 import { analizarVacante } from "@/lib/api/vacante";
 import type { AlertaVacante, TipoAlerta, VacanteAnalizada } from "@/lib/api/tipos-vacante";
+import { guardarVacanteId } from "@/lib/puente-perfil";
 
 type Estado = "inactivo" | "cargando" | "exito" | "error";
 
@@ -52,6 +53,11 @@ export default function AnalizarVacante() {
     setError(null);
     try {
       const analisis = await analizarVacante(texto);
+      // Recordamos el id de la vacante para la "ruta feliz": desde el resultado
+      // se puede ir directo a calcular la compatibilidad sin copiar ids a mano.
+      if (analisis.id) {
+        guardarVacanteId(analisis.id);
+      }
       setResultado(analisis);
       setEstado("exito");
     } catch (fallo) {
@@ -129,6 +135,13 @@ function Resultado({ analisis }: { analisis: VacanteAnalizada }) {
       <Tarjeta className="border-acento-foco">
         <p className="text-sm text-texto-suave">{DESCARGO_LEGAL}</p>
       </Tarjeta>
+
+      {/* Siguiente paso de la ruta feliz: comparar esta vacante con el perfil. */}
+      {analisis.id && (
+        <Boton href="/match" anchoCompleto tamano="lg">
+          Ver mi compatibilidad
+        </Boton>
+      )}
     </div>
   );
 }

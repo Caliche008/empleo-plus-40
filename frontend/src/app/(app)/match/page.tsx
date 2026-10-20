@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Boton } from "@/components/boton";
 import { BandaError } from "@/components/banda-error";
-import { CampoTexto } from "@/components/campo-texto";
 import { Chip } from "@/components/chip";
 import { Spinner } from "@/components/spinner";
 import { Tarjeta } from "@/components/tarjeta";
 import { ErrorApi } from "@/lib/api/cliente";
 import { calcularMatch } from "@/lib/api/match";
+import { leerPerfilId, leerVacanteId } from "@/lib/puente-perfil";
 import type {
   BrechaMatch,
   CriterioDesglose,
@@ -48,42 +48,32 @@ const NOMBRE_CRITERIO: Record<string, string> = {
 /**
  * Compatibilidad (match) [CONECTADA]. Pantalla de resultado accesible.
  *
- * Disparador documentado del match en esta fase: una tarjeta con los ids del
- * candidato y de la vacante. El `candidatoId` es el id del perfil guardado; el
- * `vacanteId` es el `id` que devuelve `analizarVacante` al guardar la oferta. La
- * integración directa desde las pantallas de perfil/vacante llega después; por
- * ahora esta pantalla es la forma usable y documentada de calcular un match.
+ * Ruta feliz sin pedir identificadores a mano: al entrar, toma el perfil activo
+ * (`leerPerfilId`, guardado al confirmar el perfil) y la última vacante analizada
+ * (`leerVacanteId`, guardada al analizar una oferta) desde el puente de
+ * `sessionStorage`, y calcula la compatibilidad automáticamente. Si falta alguno
+ * de los dos, guía a la persona al paso que corresponde (crear perfil o analizar
+ * una vacante) en lenguaje simple, con UNA acción principal.
  *
- * Accesibilidad verificada manualmente: el tema oscuro+morado mantiene contraste
- * alto; el foco de teclado es visible (los componentes base fijan
- * `focus-visible:ring-acento-foco`); los campos tienen etiqueta visible y texto de
- * ayuda; hay UNA sola acción principal; el puntaje usa texto grande con
- * `aria-label` en palabras y la banda de error se anuncia con `role="alert"`. La
- * validación completa con tecnologías de asistencia (lectores de pantalla reales)
- * requiere revisión humana — ver `compliance.md §7`.
+ * Accesibilidad: tema oscuro+morado con contraste alto; foco de teclado visible
+ * (los componentes base fijan `focus-visible:ring-acento-foco`); UNA sola acción
+ * principal por estado; el puntaje usa texto grande con `aria-label` en palabras
+ * y la banda de error se anuncia con `role="alert"`. La validación completa con
+ * tecnologías de asistencia (lectores de pantalla reales) requiere revisión
+ * humana — ver `compliance.md §7`.
  */
 export default function Compatibilidad() {
-  const [candidatoId, setCandidatoId] = useState("");
-  const [vacanteId, setVacanteId] = useState("");
-  const [estado, setEstado] = useState<Estado>("inactivo");
+  const [estado, setEstado] = useState<Estado>("cargando");
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoMatch | null>(null);
+  // Qué dato falta para poder calcular, si es que falta alguno.
+  const [falta, setFalta] = useState<"perfil" | "vacante" | null>(null);
 
-  const cargando = estado === "cargando";
-  const faltanIds =
-    candidatoId.trim().length === 0 || vacanteId.trim().length === 0;
-
-  async function onCalcular() {
-    if (faltanIds) {
-      return;
-    }
+  const calcular = useCallback(async (candidatoId: string, vacanteId: string) => {
     setEstado("cargando");
     setError(null);
     try {
-      const match = await calcularMatch({
-        candidatoId: candidatoId.trim(),
-        vacanteId: vacanteId.trim(),
-      });
+      const match = await calcularMatch({ candidatoId, vacanteId });
       setResultado(match);
       setEstado("exito");
     } catch (fallo) {
@@ -91,45 +81,40 @@ export default function Compatibilidad() {
       setError(api?.message ?? "Ocurrió un error. Inténtalo de nuevo en un momento.");
       setEstado("error");
     }
-  }
+  }, []);
+
+  // Al montar, resuelve perfil + vacante desde el puente (sessionStorage, solo
+  // disponible en el cliente) y calcula si están ambos. El estado inicial se
+  // sincroniza aquí a propósito.
+  useEffect(() => {
+    const perfilId = leerPerfilId();
+    const vacanteId = leerVacanteId();
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!perfilId) {
+      setFalta("perfil");
+      setEstado("inactivo");
+      return;
+    }
+    if (!vacanteId) {
+      setFalta("vacante");
+      setEstado("inactivo");
+      return;
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+    void calcular(perfilId, vacanteId);
+  }, [calcular]);
 
   return (
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-texto">Compatibilidad</h1>
         <p className="text-base text-texto-suave">
-          Compara tu perfil con una vacante analizada y te mostramos qué tan bien
-          encajan, qué ya cubres y qué conviene reforzar.
+          Comparamos tu perfil con la última vacante que analizaste y te mostramos
+          qué tan bien encajan, qué ya cubres y qué conviene reforzar.
         </p>
       </header>
 
-      <Tarjeta>
-        <div className="flex flex-col gap-4">
-          <CampoTexto
-            id="candidato-id"
-            etiqueta="Id del perfil"
-            ayuda="Es el identificador de tu perfil guardado."
-            valor={candidatoId}
-            onCambio={setCandidatoId}
-          />
-          <CampoTexto
-            id="vacante-id"
-            etiqueta="Id de la vacante"
-            ayuda="Es el identificador que obtienes al analizar y guardar una oferta."
-            valor={vacanteId}
-            onCambio={setVacanteId}
-          />
-          <Boton
-            onClick={onCalcular}
-            deshabilitado={faltanIds}
-            cargando={cargando}
-            anchoCompleto
-            tamano="lg"
-          >
-            Calcular compatibilidad
-          </Boton>
-        </div>
-      </Tarjeta>
+      {estado === "inactivo" && falta && <QueFalta falta={falta} />}
 
       {estado === "cargando" && (
         <div className="flex justify-center">
@@ -141,6 +126,37 @@ export default function Compatibilidad() {
 
       {estado === "exito" && resultado && <Resultado match={resultado} />}
     </section>
+  );
+}
+
+/**
+ * Guía cuando falta un dato para calcular. Un solo mensaje claro y una sola
+ * acción principal, según qué falte (el perfil o la vacante).
+ */
+function QueFalta({ falta }: { falta: "perfil" | "vacante" }) {
+  const contenido =
+    falta === "perfil"
+      ? {
+          mensaje:
+            "Para ver tu compatibilidad primero necesitamos tu perfil. Créalo en unos pasos y vuelve aquí.",
+          href: "/perfil/metodo",
+          accion: "Crear mi perfil",
+        }
+      : {
+          mensaje:
+            "Analiza una oferta de empleo y luego te mostramos qué tan compatible es con tu perfil.",
+          href: "/vacante/analizar",
+          accion: "Analizar una vacante",
+        };
+  return (
+    <Tarjeta>
+      <div className="flex flex-col gap-4">
+        <p className="text-base text-texto">{contenido.mensaje}</p>
+        <Boton href={contenido.href} anchoCompleto tamano="lg">
+          {contenido.accion}
+        </Boton>
+      </div>
+    </Tarjeta>
   );
 }
 
