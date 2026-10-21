@@ -1,65 +1,92 @@
 # Punto de retorno — Empleo Plus 40
 
 > Lee este archivo al abrir un chat nuevo para continuar sin perder contexto.
-> La fuente de verdad es: `.kiro/steering/`, `.kiro/specs/`, `docs/decisiones.md`.
+> Fuente de verdad: `.kiro/steering/`, `.kiro/specs/`, `docs/decisiones.md`.
+> Última actualización: 2026-10-21.
 
 ## Qué es el proyecto
 
-App para profesionales **mayores de 40 años** contra el **edadismo laboral**.
-Analiza vacantes vs. perfil real, optimiza el CV sin inventar (ATS), traduce
-experiencia "antigua" a competencias vigentes, detecta sesgo por edad en ofertas,
-prepara entrevistas y da seguimiento. Canal principal WhatsApp + PWA.
+App contra el **edadismo laboral** para profesionales **+40** (piloto Colombia,
+visión Latinoamérica). Diferenciador núcleo: **detector de edadismo en ofertas**,
+**traductor de experiencia +40**, **honestidad radical** (nunca inventar),
+acompañamiento, y canal principal **WhatsApp + PWA**. Ver `.kiro/steering/product.md`.
 
-- **Piloto:** Colombia. **Visión:** toda Latinoamérica (arquitectura multi-país).
-- **Enfoque +40 pero SIN restringir acceso por edad** (decisión Opción A).
-- **Diferenciador (núcleo):** traductor de experiencia +40, detector de edadismo,
-  honestidad radical (nunca inventar), dignidad + acompañamiento humano, WhatsApp
-  accesible.
+## Stack
 
-## Stack y arquitectura
+- **Backend:** NestJS + TypeScript ESM (`backend/`). Prisma 7 + PostgreSQL en Neon
+  (con pgvector). IA intercambiable (Gemini activo), salida JSON validada con Zod.
+- **Frontend:** Next.js 16 + React 19 + Tailwind v4 (`frontend/`). Tema oscuro +
+  morado. Proxy `/api` → backend.
+- **Repo:** git local + GitHub (`main` al día). Flujo: rama por feature → merge
+  `--no-ff` a `main` → push → borrar rama.
 
-- **Monolito modular** (no microservicios).
-- **Backend:** NestJS + TypeScript (carpeta `backend/`). ESM (imports con `.js`).
-- **Frontend:** Next.js PWA + Tailwind + App Router (carpeta `frontend/`).
-- **BD:** PostgreSQL en **Neon** con pgvector + Prisma. **PENDIENTE DE CONECTAR**
-  (falta crear el proyecto en Neon y poner DATABASE_URL en `backend/.env`).
-- **IA:** proveedor intercambiable (gemini/openrouter/groq), salida JSON validada
-  (Zod), prompts versionados y probados aparte.
+## Puertos y arranque local
 
-## Método de desarrollo (OBLIGATORIO)
+- Backend en **3000**: `cd backend ; npm run start:dev`
+- Frontend en **3001**: `cd frontend ; npm run dev` → abrir http://localhost:3001
+- Ver en el celular (sin tocar firewall): túnel con cloudflared (ya instalado):
+  `cloudflared tunnel --url http://localhost:3001` → da una URL pública temporal.
 
-Ver `.kiro/steering/metodo-desarrollo.md`. Por cada tarea: planificar → construir
-→ probar → **auditoría adversarial (árbitro)** → corregir → repetir → commit.
-No dar por terminado sin: compila, pruebas pasan, linter, compliance, sin placeholders.
+## Estado actual (TODO EN `main`, verificado y mergeado)
 
-## Estado actual (todo en git LOCAL, 6 commits; NO hay GitHub aún)
+HECHO y funcional de verdad (probado contra backend + Neon + Gemini):
+- **Capa IA** robusta. Fix aplicado: Gemini 3.x con `thinkingBudget:0` (el
+  "pensamiento" rompía las respuestas JSON) y timeout 90s. Nota: Gemini a veces
+  da 502/503 por alta demanda; hay reintentos y degradación.
+- **Módulo perfil-candidato:** parsing PDF/DOCX/TXT, OCR de imágenes vía IA,
+  extracción con IA (sin inventar), persistencia Prisma/Neon, endpoints
+  `POST /perfil/cv`, `/perfil/confirmar`, `GET/PATCH/DELETE /perfil/:id`,
+  `GET /perfil/preguntas`. Consentimiento obligatorio, borrado en un paso.
+  Pendiente del módulo: transcripción de voz (tarea 7).
+- **Módulo análisis de vacante:** prompt `analizar-vacante` (detecta edad,
+  salario oculto, requisitos inflados; descargo legal siempre), `POST /vacante/analizar`
+  (persiste y devuelve id), `GET /vacante/:id`. Pendiente: FetchService de URLs (tarea 5).
+- **Módulo match / compatibilidad:** reglas + semántica (pgvector preparado,
+  columna NULL por ahora; respaldo Jaccard sin red) + explicación IA (solo redacta).
+  Anti-sesgo DURO (el cálculo no recibe edad/nombre/género) con **prueba de sesgo**
+  como gate. `POST /match`, `GET /match/:id`.
+- **Frontend:** cáscara visual completa + flujo del perfil, vacante y match
+  CONECTADOS de verdad. Ruta feliz enlazada: crear perfil → analizar vacante →
+  botón "Ver mi compatibilidad" → match automático (sin pedir ids a mano).
+- Pantallas MAQUETA (datos de ejemplo, con aviso de demo): inicio/buscar empleo,
+  login/registro, guardados, postulaciones, estadísticas, publicar vacante (empleador).
 
-Hecho:
-- Fases 0, 1, 2 completas: estructura, steering (5 archivos), specs de los 8 módulos.
-- Scaffold backend NestJS + frontend Next.js, dependencias instaladas.
-  - NOTA: npm fallaba con error `edgesOut`; se resolvió usando `--legacy-peer-deps`.
-- Capa `ia` construida: `ia.service.ts` (completar + completarJson con validación
-  Zod y reintentos), proveedores (gemini, openai-compatible para openrouter/groq),
-  `ia.module.ts` (global). Prompts versionados: `extraer-perfil`, `traducir-experiencia`.
+## Decisión de producto PENDIENTE (lo más importante a resolver)
 
-## RETOMAR POR AQUÍ (orden)
+Al ver la demo en el celular surgió una observación clave del usuario: **"se ve
+como una app de empleos más"**, porque la entrada muestra maquetas genéricas y el
+diferenciador (detector de edadismo, match honesto) está escondido. Falta validar
+si sirve como herramienta esencial.
 
-1. **Crear el prompt `detectar-edadismo`** en `backend/src/ia/prompts/`
-   (quedó pendiente; es diferenciador clave). Esquema Zod: hayIndicios, senales
-   [{fragmento, motivo, gravedad baja|media|alta}], resumen (con descargo "no es
-   asesoría jurídica").
-2. **Pruebas de la capa `ia`** (según el método): probar `extraerJson()` con
-   JSON directo, envuelto en ```json```, y con texto alrededor; validación de
-   esquemas; reintento ante JSON inválido (con un proveedor simulado).
-3. **Módulo `perfil-candidato`** (primer módulo del MVP): ver su spec en
-   `.kiro/specs/perfil-candidato/`. Empezar por lo que NO necesita BD:
-   ParsingService (PDF/DOCX/texto) + PerfilExtractorService usando la capa `ia`.
-4. Conectar **Neon** cuando el usuario pase la DATABASE_URL → Prisma schema +
-   primera migración → endpoints del perfil.
+Plan propuesto para retomar (en este orden):
+1. **Probar el diferenciador con una oferta REAL**: pegar el texto de una vacante
+   real que excluya por edad y ver si el detector da algo valioso y creíble.
+   (Tener a mano el texto de una oferta real de LinkedIn/Computrabajo.)
+2. Si convence: **poner el diferenciador al frente** — rehacer la bienvenida para
+   que reciba con "analiza si una oferta te discrimina por edad" y lleve directo a
+   eso, no a una lista de empleos genérica. Esconder/quitar maquetas que lo hacen
+   parecer "una más".
+3. Alternativa: **replantear el enfoque** del producto si el concepto no convence.
 
-## Pendientes del usuario
+## Pendientes técnicos (para después, no bloquean la decisión de producto)
 
-- Crear proyecto en **Neon** y pasar la connection string (va en `backend/.env`,
-  nunca en git).
-- Decidir si subir a **GitHub** (ahora solo está en git local de este PC).
-- Nombre definitivo del producto ("Empleo Plus 40" es provisional).
+- Transcripción de voz (perfil, tarea 7) — requiere elegir servicio speech-to-text.
+- FetchService de URLs en análisis de vacante (tarea 5).
+- Módulos sin empezar: optimizador CV, simulador ATS, generador de mensajes,
+  alertas de empleo, seguimiento de postulaciones.
+- Transversal: PWA (manifest/offline), **autenticación real** (hoy el login es
+  maqueta), WhatsApp (canal principal), despliegue a producción.
+- Validación humana de accesibilidad (WCAG) y legal (Ley 1581) antes de producción.
+
+## PENDIENTES DE SEGURIDAD (hacer pronto)
+
+Durante el desarrollo se expusieron credenciales en el chat. ROTAR:
+- Contraseña de la base de datos en **Neon** (panel → Roles → reset password).
+- Clave de **Gemini** (Google AI Studio → revocar/regenerar).
+Tras rotarlas, actualizar `backend/.env` (ignorado por git) con los nuevos valores.
+
+## Progreso aproximado
+
+~30-35% del MVP completo. La base difícil (arquitectura, capa IA, núcleo
+perfil→vacante→match) está hecha. Falta volumen de funcionalidad de cara al
+usuario y, sobre todo, resolver la pregunta de producto de arriba.
