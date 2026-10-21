@@ -26,13 +26,24 @@ export const ETIQUETA_ESTADO: Record<EstadoPostulacion, string> = {
   entrevista: "Entrevista",
 };
 
+/**
+ * Fecha ISO (yyyy-mm-dd) de hace `dias` días respecto a hoy. Las fechas de
+ * ejemplo se calculan relativas al momento actual para que la demo siempre se
+ * vea reciente y no quede anclada a un año pasado.
+ */
+function haceDias(dias: number): string {
+  const fecha = new Date();
+  fecha.setDate(fecha.getDate() - dias);
+  return fecha.toISOString().slice(0, 10);
+}
+
 export const POSTULACIONES_EJEMPLO: PostulacionMock[] = [
   {
     id: "post-001",
     vacanteTitulo: "Asesor comercial",
     empresa: "Seguros Confianza",
     estado: "en-revision",
-    fecha: "2024-05-02",
+    fecha: haceDias(3),
     esEjemplo: true,
   },
   {
@@ -40,7 +51,7 @@ export const POSTULACIONES_EJEMPLO: PostulacionMock[] = [
     vacanteTitulo: "Auxiliar administrativo",
     empresa: "Distribuidora El Roble",
     estado: "entrevista",
-    fecha: "2024-04-28",
+    fecha: haceDias(6),
     esEjemplo: true,
   },
   {
@@ -48,7 +59,7 @@ export const POSTULACIONES_EJEMPLO: PostulacionMock[] = [
     vacanteTitulo: "Soporte técnico remoto",
     empresa: "RedPunto",
     estado: "enviada",
-    fecha: "2024-05-05",
+    fecha: haceDias(1),
     esEjemplo: true,
   },
 ];
